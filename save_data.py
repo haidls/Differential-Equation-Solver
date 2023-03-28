@@ -1,15 +1,15 @@
 import numpy
 import data
 
-input_length = 2
+input_length = 3
 input_width = 1
-test_data_amount = 10
-test_repetitions = 1
+test_data_amount = 30
+test_repetitions = 7
 
 
 def generate_data(input_length, input_width, test_data_amount, test_repetitions):
     training_input, training_output, testing_input, testing_output = \
-        data.get_data(coefficient_value_amount=5, input_length=input_length, input_width=input_width,
+        data.get_data(coefficient_value_amount=7, input_length=input_length, input_width=input_width,
                       test_repetitions=test_repetitions, test_data_amount=test_data_amount)
 
     file_path = 'data_sets/data_set_lwdr_%d_%d_%d_%d.npy' % (input_length, input_width, test_data_amount,

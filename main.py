@@ -1,17 +1,14 @@
 import numpy.linalg
 from tensorflow import keras
-
-import data
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 import os
 
 import save_data
 
-input_length = 2
+input_length = 3
 input_width = 1
 test_data_amount = 10
-test_repetitions = 1
+test_repetitions = 7
 
 
 """def test_function(F, model, start, name):
@@ -51,7 +48,7 @@ if __name__ == '__main__':
 
     model = keras.Sequential(
         [
-            keras.layers.Dense(16, activation="relu", name="layer1"),
+            keras.layers.Dense(14, activation="relu", name="layer1"),
             keras.layers.Dense(10, activation="relu", name="layer2"),
             keras.layers.Dense(1, name="layer3"),
         ]
@@ -61,7 +58,7 @@ if __name__ == '__main__':
                   optimizer=keras.optimizers.Adam(),
                   metrics=[keras.metrics.MeanAbsoluteError()])
 
-    model.fit(training_input, training_output, batch_size=32, epochs=10)
+    model.fit(training_input, training_output, batch_size=32, epochs=50)
 
     """results = numpy.zeros((len(testing_output), test_repetitions))
     new_values = numpy.zeros((len(testing_output), 1))
@@ -79,36 +76,40 @@ if __name__ == '__main__':
                                                    axis=1)
     results[:, test_repetitions-1] = (model(testing_input_modified).numpy())[:, 0]"""
 
-    for i in range(0, (testing_output.shape())[0]):
+    results = numpy.zeros((test_data_amount, input_length + test_repetitions, 11))
+    results[:, 0:input_length, :] = testing_input
+    shape = (test_data_amount, input_length * (2 * input_width + 1))
+    for i in range(0, test_repetitions):
+        results[:, input_length+i, [0, 10]] = results[:, input_length+i-1, [0, 10]]
+        for j in range(input_width, 11 - input_width):
+            input = numpy.reshape(results[:, i:input_length+i, j-input_width:j+input_width+1], shape)
+            results[:, input_length+i, j] = (model(input).numpy())[:, 0]
 
-
-    results = (model(testing_input).numpy())[:, 0]
-
-    total_error = results - testing_output
+    total_error = results[:, -1, input_width:11-input_width] - testing_output[:, -1, input_width:11-input_width]
     error_norm = numpy.linalg.norm(total_error, 2)
-    error = error_norm / len(testing_output)
+    error = error_norm / total_error.size
     print('the approximation error is %f' % error)
 
     x_values = numpy.array(range(0, 11)) / 10
-    for i in range(0, int(len(testing_output)/9)):
-        plt.figure()
-        exact = numpy.zeros(11)
-        exact[0] = testing_input[9 * i, 0]
-        exact[1:10] = testing_output[9 * i: 9 * i + 9]
-        exact[10] = testing_input[9 * i + 8, -1]
-        approximation = numpy.zeros(11)
-        approximation[0] = testing_input[9 * i, 0]
-        approximation[1:10] = results[9 * i: 9 * i + 9]
-        approximation[10] = testing_input[9 * i + 8, -1]
-        plt.plot(x_values, exact)
-        plt.plot(x_values, approximation)
-        plt.legend(["exact solution", "approximate solution"])
-        plt.title("Plot number " + str(i))
+    plt.ioff()
+    for i in range(0, test_data_amount):
+        for j in range(0, input_length):
+            plt.figure()
+            plt.plot(x_values, testing_input[i, j, :])
+            plt.legend(["input"])
+            plt.title("Test number " + str(i) + ", t = " + str(j/10))
+        for k in range(0, test_repetitions):
+            plt.figure()
+            plt.plot(x_values, testing_output[i, k, :])
+            plt.plot(x_values, results[i, input_length+k, :])
+            plt.legend(["exact solution", "approximate solution"])
+            plt.title("Test number " + str(i) + ", t = " + str((input_length+k)/10))
+        plt.show()
+
 
     """f = lambda t, x: math.exp(x/10)/10
     test_function(f, model, 1, "exp(x/10)")
 
     g = lambda t, x: math.sqrt(abs(x))/5
     test_function(g, model, 1, "sqrt(abs(x))")"""
-    plt.show()
 

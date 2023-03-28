@@ -40,8 +40,8 @@ def get_data(coefficient_value_amount, input_length, input_width, test_repetitio
             coeff[j] = random.uniform(coef_min_value, coef_max_value)
         test_coeff[i, :] = coeff
         solution = solve_pde(coeff, grid, input_length, test_repetitions-1)
-        input = (solution[0:input_length, :]).flatten()
-        output = solution[-1, :]
+        input = (solution[0:input_length, :])
+        output = (solution[input_length:, :])
         counter = counter + 1
         print("solved equation " + str(counter))
         testing_input.append(input)
@@ -58,7 +58,7 @@ def get_data(coefficient_value_amount, input_length, input_width, test_repetitio
             failed_counter_testing += 1"""
 
     return numpy.vstack(training_input), numpy.array(training_output), \
-           numpy.vstack(testing_input), numpy.array(testing_output)
+           numpy.stack(testing_input), numpy.stack(testing_output)
 
 
 def solve_pde(coeff, grid, input_length, elongation=0):
@@ -66,12 +66,12 @@ def solve_pde(coeff, grid, input_length, elongation=0):
     expression = function_string(coeff)
     field = pde.ScalarField.from_expression(grid, expression)
     boundary_conditions = {"value_expression": expression}
-    equation = pde.PDE({"u": "laplace(u)/40"}, bc=boundary_conditions)
+    equation = pde.PDE({"u": "laplace(u)/5"}, bc=boundary_conditions)
     storage = pde.MemoryStorage()
     t_range = delta_time * (input_length + elongation)
     equation.solve(field, t_range=t_range, dt=1e-2, tracker=storage.tracker(delta_time))
     data = numpy.vstack(storage.data)
-    solution = pick_out_values(data, F, input_length)
+    solution = pick_out_values(data, F, input_length+elongation+1)
     return solution
 
 
@@ -83,18 +83,16 @@ def function_string(coeff):
     return str(coeff[0]) + "*sin(2*pi*x)+" + str(coeff[1]) + "*x+" + str(coeff[2]) + "*cos(2*pi*x)"
 
 
-def pick_out_values(data, F, input_length):
-    solution = numpy.zeros((input_length+1, 11))
-    solution[:, 0] = numpy.ones(input_length+1) * F(0, 0)
+def pick_out_values(data, F, length):
+    solution = numpy.zeros((length, 11))
+    solution[:, 0] = numpy.ones(length) * F(0, 0)
     index = 1
     for i in range(0, 4):
-        solution[0:input_length, 2 * i + 1] = data[0:input_length, index]
-        solution[input_length, 2 * i + 1] = data[-1, index]
-        solution[0:input_length, 2 * i + 2] = (data[0:input_length, index + 1] + data[0:input_length, index + 2]) / 2
-        solution[input_length, 2 * i + 2] = (data[-1, index + 1] + data[-1, index + 2]) / 2
+        solution[:, 2 * i + 1] = data[:, index]
+        solution[:, 2 * i + 2] = (data[:, index + 1] + data[:, index + 2]) / 2
         index = index + 3
     solution[:, 9] = data[:, index]
-    solution[:, 10] = numpy.ones(input_length+1) * F(0, 1)
+    solution[:, 10] = numpy.ones(length) * F(0, 1)
     return solution
 
 
