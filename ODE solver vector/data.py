@@ -67,8 +67,8 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
             failed_counter_testing += 1
     print('The testing data generation failed %d times' % failed_counter_testing)
 
-    return numpy.vstack(training_input), numpy.array(training_output), \
-           numpy.vstack(testing_input), numpy.array(testing_output), t_eval_test, test_coeff
+    return numpy.stack(training_input, axis=0), numpy.array(training_output), \
+           numpy.stack(testing_input, axis=0), numpy.stack(testing_output, axis=0), t_eval_test, test_coeff
 
 
 def function(coeff):
@@ -78,9 +78,8 @@ def function(coeff):
 
 
 def format_input(input_length, solution, F, t_eval):
-    input = numpy.zeros(2 * input_length * dimensions)
-    input[0:input_length*dimensions] = (solution.y[:, 0:input_length]).flatten('F')
+    input = numpy.zeros((2 * input_length, dimensions))
+    input[0:input_length] = solution.y[:, 0:input_length]
     for i in range(0, input_length):
-        input[dimensions*(input_length+i):dimensions*(input_length+i+1)] = \
-            F(t_eval[i], input[dimensions*i:dimensions*(i+1)])
-    return input, (solution.y[:, input_length:]).flatten('F')
+        input[input_length+i] = F(t_eval[i], input[i])
+    return input, (solution.y[:, input_length:])

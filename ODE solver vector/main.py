@@ -35,6 +35,18 @@ def test_function(F, model, start, name):
     plt.legend(["exact solution", "approximate solution"])
     plt.title("ODE solution for right hand side " + str(name) + " with starting value " + str(start))
 
+#TODO
+def plot_3d(testing_input, testing_output, results):
+    for i in range(0, len(testing_output)):
+        plt.figure()
+        input_val = testing_input[i, 0:input_length]
+        output_plot = numpy.append(input_val, testing_output[i])
+        results_plot = numpy.append(input_val, results[i])
+        plt.plot(output_plot[0], output_plot[1], output_plot[2])
+        plt.plot(results_plot[0], results_plot[1], results_plot[2])
+        plt.legend(["exact solution", "approximate solution"])
+        plt.title("Plot number " + str(i))
+
 
 if __name__ == '__main__':
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
@@ -42,6 +54,8 @@ if __name__ == '__main__':
                  test_data_amount=test_data_amount)
 
     dim = data.dimensions
+    train_in_flat = training_input.reshape((len(training_output), 2*dim*input_length))
+    test_in_flat = testing_input.reshape((len(testing_input), 2*dim*input_length))
     model = keras.Sequential(
         [
             keras.layers.Dense(16, activation="relu", name="layer1"),
@@ -54,11 +68,11 @@ if __name__ == '__main__':
                   optimizer=keras.optimizers.Adam(),
                   metrics=[keras.metrics.MeanAbsoluteError()])
 
-    model.fit(training_input, training_output, batch_size=32, epochs=20)
+    model.fit(train_in_flat, training_output, batch_size=32, epochs=20)
     results = numpy.zeros((len(testing_output), dim, test_repetitions))
     new_values = numpy.zeros((len(testing_output), dim))
     new_diff = numpy.zeros((len(testing_output), dim))
-    testing_input_modified = numpy.array(testing_input, copy=True)
+    testing_input_modified = numpy.array(test_in_flat, copy=True)
     for i in range(0, test_repetitions-1):
         results[:, :, i] = (model(testing_input_modified).numpy())
         testing_input_values = testing_input_modified[:, dim:input_length*dim]
@@ -75,18 +89,11 @@ if __name__ == '__main__':
     error = error_norm / len(testing_output)
     print('the approximation error is %f' % error)
 
-    """for i in range(0, len(testing_output)):
-        plt.figure()
-        input_val = testing_input[i, 0:input_length]
-        plt.plot(t_eval, numpy.append(input_val, testing_output[i]))
-        plt.plot(t_eval, numpy.append(input_val, results[i]))
-        plt.legend(["exact solution", "approximate solution"])
-        plt.title("Plot number " + str(i))
+    plot_3d(testing_input, testing_output, results)
 
-    f = lambda t, x: math.exp(x/10)/10
-    #test_function(f, model, 1, "exp(x/10)")
+    """f = lambda t, x: math.exp(x/10)/10
+    test_function(f, model, 1, "exp(x/10)")
 
     g = lambda t, x: math.sqrt(abs(x))/5
-    #test_function(g, model, 1, "sqrt(abs(x))")
+    test_function(g, model, 1, "sqrt(abs(x))") """
     plt.show()
-"""
