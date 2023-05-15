@@ -78,8 +78,9 @@ def function(coeff):
 
 
 def format_input(input_length, solution, F, t_eval):
-    input = numpy.zeros((2 * input_length, dimensions))
-    input[0:input_length] = solution.y[:, 0:input_length]
+    input = numpy.zeros(2 * input_length * dimensions)
+    input[0:input_length*dimensions] = (solution.y[:, 0:input_length]).flatten('F')
     for i in range(0, input_length):
-        input[input_length+i] = F(t_eval[i], input[i])
+        input[dimensions*(input_length+i):dimensions*(input_length+i+1)] = \
+            F(t_eval[i], input[dimensions*i:dimensions*(i+1)])
     return input, (solution.y[:, input_length:])

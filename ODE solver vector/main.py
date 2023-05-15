@@ -35,27 +35,29 @@ def test_function(F, model, start, name):
     plt.legend(["exact solution", "approximate solution"])
     plt.title("ODE solution for right hand side " + str(name) + " with starting value " + str(start))
 
-#TODO
+
 def plot_3d(testing_input, testing_output, results):
     for i in range(0, len(testing_output)):
-        plt.figure()
-        input_val = testing_input[i, 0:input_length]
-        output_plot = numpy.append(input_val, testing_output[i])
-        results_plot = numpy.append(input_val, results[i])
-        plt.plot(output_plot[0], output_plot[1], output_plot[2])
-        plt.plot(results_plot[0], results_plot[1], results_plot[2])
-        plt.legend(["exact solution", "approximate solution"])
+        ax = plt.figure().add_subplot(projection='3d')
+        output_plot = []
+        results_plot = []
+        for j in range(0,3):
+            input_val = testing_input[i, j:3:3*input_length+j]
+            output_plot.append(numpy.append(input_val, testing_output[:, j, :]))
+            results_plot.append(numpy.append(input_val, results[:, j, :]))
+
+        ax.plot(output_plot[0], output_plot[1], output_plot[2])
+        ax.plot(results_plot[0], results_plot[1], results_plot[2])
+        ax.legend(["exact solution", "approximate solution"])
         plt.title("Plot number " + str(i))
 
 
 if __name__ == '__main__':
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
-        get_data(coefficient_value_amount=5, input_length=input_length, test_repetitions=test_repetitions,
+        get_data(coefficient_value_amount=9, input_length=input_length, test_repetitions=test_repetitions,
                  test_data_amount=test_data_amount)
 
     dim = data.dimensions
-    train_in_flat = training_input.reshape((len(training_output), 2*dim*input_length))
-    test_in_flat = testing_input.reshape((len(testing_input), 2*dim*input_length))
     model = keras.Sequential(
         [
             keras.layers.Dense(16, activation="relu", name="layer1"),
@@ -68,11 +70,11 @@ if __name__ == '__main__':
                   optimizer=keras.optimizers.Adam(),
                   metrics=[keras.metrics.MeanAbsoluteError()])
 
-    model.fit(train_in_flat, training_output, batch_size=32, epochs=20)
+    model.fit(training_input, training_output, batch_size=32, epochs=20)
     results = numpy.zeros((len(testing_output), dim, test_repetitions))
     new_values = numpy.zeros((len(testing_output), dim))
     new_diff = numpy.zeros((len(testing_output), dim))
-    testing_input_modified = numpy.array(test_in_flat, copy=True)
+    testing_input_modified = numpy.array(testing_input, copy=True)
     for i in range(0, test_repetitions-1):
         results[:, :, i] = (model(testing_input_modified).numpy())
         testing_input_values = testing_input_modified[:, dim:input_length*dim]
