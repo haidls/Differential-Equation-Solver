@@ -10,9 +10,9 @@ from scipy.integrate import solve_ivp
 
 input_length = 3
 test_data_amount = 100
-test_repetitions = 8
+test_repetitions = 10000
 
-
+"""
 def test_function(F, model, start, name):
     interval = [0, 0.1 * (input_length + test_repetitions - 0.9)]
     t_eval_func = numpy.linspace(0, (input_length + test_repetitions - 1) * 0.1, input_length + test_repetitions)
@@ -34,7 +34,7 @@ def test_function(F, model, start, name):
     plt.plot(t_eval_func, results)
     plt.legend(["exact solution", "approximate solution"])
     plt.title("ODE solution for right hand side " + str(name) + " with starting value " + str(start))
-
+"""
 
 def plot_3d(testing_input, testing_output, results):
     for i in range(0, len(testing_output)):
@@ -42,9 +42,9 @@ def plot_3d(testing_input, testing_output, results):
         output_plot = []
         results_plot = []
         for j in range(0,3):
-            input_val = testing_input[i, j:3:3*input_length+j]
-            output_plot.append(numpy.append(input_val, testing_output[:, j, :]))
-            results_plot.append(numpy.append(input_val, results[:, j, :]))
+            input_val = testing_input[i, j:3*input_length+j:3]
+            output_plot.append(numpy.append(input_val, testing_output[i, j, :]))
+            results_plot.append(numpy.append(input_val, results[i, j, :]))
 
         ax.plot(output_plot[0], output_plot[1], output_plot[2])
         ax.plot(results_plot[0], results_plot[1], results_plot[2])
@@ -54,7 +54,7 @@ def plot_3d(testing_input, testing_output, results):
 
 if __name__ == '__main__':
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
-        get_data(coefficient_value_amount=9, input_length=input_length, test_repetitions=test_repetitions,
+        get_data(coefficient_value_amount=7, input_length=input_length, test_repetitions=test_repetitions,
                  test_data_amount=test_data_amount)
 
     dim = data.dimensions
