@@ -7,11 +7,11 @@ from scipy.integrate import solve_ivp
 
 delta_time = 0.1
 dimensions = 3
-coef_max_value = 3
-coef_min_value = 1
+coef_max_value = 1
+coef_min_value = -1
 start_max_value = 3
 start_min_value = -3
-coefficient_amount = 6
+coefficient_amount = dimensions * (dimensions + 1)
 
 
 def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_data_amount=50):
@@ -52,7 +52,9 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
     random.seed(22)
     test_coeff = numpy.zeros((test_data_amount, coefficient_amount-dimensions))
     for i in range(0, test_data_amount):
-        for j in range(0, coefficient_amount):
+        for j in range(0, dimensions):
+            coeff[j] = random.uniform(start_min_value, start_min_value)
+        for j in range(dimensions, coefficient_amount):
             coeff[j] = random.uniform(coef_min_value, coef_max_value)
         F = function(coeff[dimensions:])
         test_coeff[i, :] = coeff[dimensions:]
@@ -72,10 +74,11 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
 
 
 def function(coeff):
-    return lambda t, s: numpy.array([coeff[0] * (s[1] - s[0]),
+    """return lambda t, s: numpy.array([coeff[0] * (s[1] - s[0]),
                                      s[0] * (coeff[1] - s[2]) - s[1],
-                                     s[0] * s[1] - coeff[2] * s[2]])
-
+                                     s[0] * s[1] - coeff[2] * s[2]])"""
+    A = coeff.reshape((3, 3))
+    return lambda t, s: numpy.matmul(A, s)
 
 def format_input(input_length, solution, F, t_eval):
     input = numpy.zeros(2 * input_length * dimensions)

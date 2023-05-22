@@ -54,7 +54,7 @@ def plot_3d(testing_input, testing_output, results):
 
 if __name__ == '__main__':
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
-        get_data(coefficient_value_amount=7, input_length=input_length, test_repetitions=test_repetitions,
+        get_data(coefficient_value_amount=5, input_length=input_length, test_repetitions=test_repetitions,
                  test_data_amount=test_data_amount)
 
     dim = data.dimensions
