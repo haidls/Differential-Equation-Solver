@@ -12,30 +12,6 @@ input_length = 3
 test_data_amount = 100
 test_repetitions = 10000
 
-"""
-def test_function(F, model, start, name):
-    interval = [0, 0.1 * (input_length + test_repetitions - 0.9)]
-    t_eval_func = numpy.linspace(0, (input_length + test_repetitions - 1) * 0.1, input_length + test_repetitions)
-    solution = solve_ivp(F, interval, [start], t_eval=t_eval_func)
-    func_input = numpy.zeros((1, 2 * input_length))
-    func_input[0, :], s = data.format_input(input_length, solution, F, t_eval_func)
-    func_output = solution.y[0]
-
-    results = numpy.zeros(input_length + test_repetitions)
-    results[0:input_length] = func_output[0:input_length]
-    for i in range(0, test_repetitions-1):
-        results[input_length + i] = (model(func_input).numpy())[:, 0]
-        func_input[0, 0:input_length] = results[i + 1:input_length + i + 1]
-        func_input[0, input_length:-1] = func_input[0, input_length+1:]
-        func_input[-1, 0] = F(0, func_input[0, input_length-1])
-    results[input_length + test_repetitions-1] = (model(func_input).numpy())[:, 0]
-    plt.figure()
-    plt.plot(t_eval_func, func_output)
-    plt.plot(t_eval_func, results)
-    plt.legend(["exact solution", "approximate solution"])
-    plt.title("ODE solution for right hand side " + str(name) + " with starting value " + str(start))
-"""
-
 def plot_3d(testing_input, testing_output, results):
     for i in range(0, len(testing_output)):
         ax = plt.figure().add_subplot(projection='3d')
