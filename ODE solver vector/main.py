@@ -1,40 +1,17 @@
 import math
+import os
 
 import numpy.linalg
 from tensorflow import keras
 
 import data
-from data import get_data
+import save_data
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 
 input_length = 3
 test_data_amount = 100
 test_repetitions = 10000
-
-"""
-def test_function(F, model, start, name):
-    interval = [0, 0.1 * (input_length + test_repetitions - 0.9)]
-    t_eval_func = numpy.linspace(0, (input_length + test_repetitions - 1) * 0.1, input_length + test_repetitions)
-    solution = solve_ivp(F, interval, [start], t_eval=t_eval_func)
-    func_input = numpy.zeros((1, 2 * input_length))
-    func_input[0, :], s = data.format_input(input_length, solution, F, t_eval_func)
-    func_output = solution.y[0]
-
-    results = numpy.zeros(input_length + test_repetitions)
-    results[0:input_length] = func_output[0:input_length]
-    for i in range(0, test_repetitions-1):
-        results[input_length + i] = (model(func_input).numpy())[:, 0]
-        func_input[0, 0:input_length] = results[i + 1:input_length + i + 1]
-        func_input[0, input_length:-1] = func_input[0, input_length+1:]
-        func_input[-1, 0] = F(0, func_input[0, input_length-1])
-    results[input_length + test_repetitions-1] = (model(func_input).numpy())[:, 0]
-    plt.figure()
-    plt.plot(t_eval_func, func_output)
-    plt.plot(t_eval_func, results)
-    plt.legend(["exact solution", "approximate solution"])
-    plt.title("ODE solution for right hand side " + str(name) + " with starting value " + str(start))
-"""
+coeff_value_amount = 5
 
 def plot_3d(testing_input, testing_output, results):
     for i in range(0, len(testing_output)):
@@ -53,9 +30,22 @@ def plot_3d(testing_input, testing_output, results):
 
 
 if __name__ == '__main__':
-    training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
+    """training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
         get_data(coefficient_value_amount=5, input_length=input_length, test_repetitions=test_repetitions,
-                 test_data_amount=test_data_amount)
+                 test_data_amount=test_data_amount)"""
+
+    file_path = 'data_sets/data_set_lwdri_%d_%d_%d_%d.npy' % (
+    coeff_value_amount, input_length, test_repetitions, test_data_amount)
+    if not os.path.exists(file_path):
+        save_data.generate_data(coeff_value_amount, input_length, test_data_amount, test_repetitions, file_path)
+
+    with open(file_path, 'rb') as f:
+        training_input = numpy.load(f)
+        training_output = numpy.load(f)
+        testing_input = numpy.load(f)
+        testing_output = numpy.load(f)
+        t_eval = numpy.load(f)
+        test_coeff = numpy.load(f)
 
     dim = data.dimensions
     model = keras.Sequential(
@@ -92,10 +82,4 @@ if __name__ == '__main__':
     print('the approximation error is %f' % error)
 
     plot_3d(testing_input, testing_output, results)
-
-    """f = lambda t, x: math.exp(x/10)/10
-    test_function(f, model, 1, "exp(x/10)")
-
-    g = lambda t, x: math.sqrt(abs(x))/5
-    test_function(g, model, 1, "sqrt(abs(x))") """
     plt.show()
