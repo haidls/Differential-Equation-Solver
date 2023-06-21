@@ -20,14 +20,54 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
     testing_input = []
     testing_output = []
 
+    coefficient_range, start_range, t_eval_test, t_eval_training = data_setup(coefficient_value_amount, input_length,
+                                                                              test_repetitions)
+    coeff = create_training_data(coefficient_range, coefficient_value_amount, input_length, start_range,
+                                 t_eval_training, training_input, training_output)
+
+    test_coeff = create_testing_data(coeff, input_length, t_eval_test, test_data_amount, test_repetitions,
+                                     testing_input, testing_output)
+
+    return numpy.stack(training_input, axis=0), numpy.array(training_output), \
+           numpy.stack(testing_input, axis=0), numpy.stack(testing_output, axis=0), t_eval_test, test_coeff
+
+
+def data_setup(coefficient_value_amount, input_length, test_repetitions):
     coefficient_range = numpy.linspace(coef_min_value, coef_max_value, coefficient_value_amount)
     start_range = numpy.linspace(start_min_value, start_max_value, coefficient_value_amount)
     t_eval_test = numpy.linspace(0, (input_length + test_repetitions - 1) * delta_time, input_length + test_repetitions)
-    t_eval_training = t_eval_test[0:input_length+1]
-    failed_counter_training = 0
+    t_eval_training = t_eval_test[0:input_length + 1]
+    return coefficient_range, start_range, t_eval_test, t_eval_training
 
+
+def create_testing_data(coeff, input_length, t_eval_test, test_data_amount, test_repetitions, testing_input,
+                        testing_output):
+    failed_counter_testing = 0
+    random.seed(22)
+    test_coeff = numpy.zeros((test_data_amount, coefficient_amount - dimensions))
+    for i in range(0, test_data_amount):
+        for j in range(0, coefficient_amount):
+            coeff[j] = random.uniform(coef_min_value, coef_max_value)
+        F = function(coeff[dimensions:])
+        test_coeff[i, :] = coeff[dimensions:]
+
+        solution = solve_ivp(F, [0, delta_time * (input_length + test_repetitions - 0.9)], coeff[0:dimensions],
+                             t_eval=t_eval_test)
+        if solution.success:
+            input, output = format_input(input_length, solution, F, t_eval_test)
+            testing_input.append(input)
+            testing_output.append(output)
+        else:
+            failed_counter_testing += 1
+    print('The testing data generation failed %d times' % failed_counter_testing)
+    return test_coeff
+
+
+def create_training_data(coefficient_range, coefficient_value_amount, input_length, start_range, t_eval_training,
+                         training_input, training_output):
+    failed_counter_training = 0
     coeff = numpy.zeros(coefficient_amount)
-    for i in range(0, coefficient_amount**coefficient_value_amount):
+    for i in range(0, coefficient_amount ** coefficient_value_amount):
         div = i
         for j in range(0, dimensions):
             index = div % coefficient_value_amount
@@ -47,28 +87,7 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
         else:
             failed_counter_training += 1
     print('The training data generation failed %d times' % failed_counter_training)
-
-    failed_counter_testing = 0
-    random.seed(22)
-    test_coeff = numpy.zeros((test_data_amount, coefficient_amount-dimensions))
-    for i in range(0, test_data_amount):
-        for j in range(0, coefficient_amount):
-            coeff[j] = random.uniform(coef_min_value, coef_max_value)
-        F = function(coeff[dimensions:])
-        test_coeff[i, :] = coeff[dimensions:]
-
-        solution = solve_ivp(F, [0, delta_time * (input_length + test_repetitions - 0.9)], coeff[0:dimensions],
-                             t_eval=t_eval_test)
-        if solution.success:
-            input, output = format_input(input_length, solution, F, t_eval_test)
-            testing_input.append(input)
-            testing_output.append(output)
-        else:
-            failed_counter_testing += 1
-    print('The testing data generation failed %d times' % failed_counter_testing)
-
-    return numpy.stack(training_input, axis=0), numpy.array(training_output), \
-           numpy.stack(testing_input, axis=0), numpy.stack(testing_output, axis=0), t_eval_test, test_coeff
+    return coeff
 
 
 def function(coeff):

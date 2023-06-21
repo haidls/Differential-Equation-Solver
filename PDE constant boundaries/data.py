@@ -20,9 +20,38 @@ def get_data(coefficient_value_amount, input_length, input_width, test_repetitio
     coefficient_range = numpy.linspace(coef_min_value, coef_max_value, coefficient_value_amount)
     grid = pde.CartesianGrid([[0, 1]], [interval_amount*3//2])
 
+    coeff, counter = create_training_data(coefficient_range, coefficient_value_amount, grid, input_length, input_width,
+                                          interval_amount, training_input, training_output)
+
+    create_testing_data(coeff, counter, grid, input_length, interval_amount, test_data_amount, test_repetitions,
+                        testing_input, testing_output)
+
+    return numpy.vstack(training_input), numpy.array(training_output), numpy.stack(testing_input), \
+           numpy.stack(testing_output)
+
+
+def create_testing_data(coeff, counter, grid, input_length, interval_amount, test_data_amount, test_repetitions,
+                        testing_input, testing_output):
+    random.seed(22)
+    test_coeff = numpy.zeros((test_data_amount, coefficient_amount))
+    for i in range(0, test_data_amount):
+        for j in range(0, coefficient_amount):
+            coeff[j] = random.uniform(coef_min_value, coef_max_value)
+        test_coeff[i, :] = coeff
+        solution = solve_pde(coeff, grid, input_length, interval_amount, test_repetitions - 1)
+        input = (solution[0:input_length, :])
+        output = (solution[input_length:, :])
+        counter = counter + 1
+        print("solved equation " + str(counter))
+        testing_input.append(input)
+        testing_output.append(output)
+
+
+def create_training_data(coefficient_range, coefficient_value_amount, grid, input_length, input_width, interval_amount,
+                         training_input, training_output):
     coeff = numpy.zeros(coefficient_amount)
     counter = 0
-    for i in range(0, coefficient_value_amount**coefficient_amount):
+    for i in range(0, coefficient_value_amount ** coefficient_amount):
         div = i
         for j in range(0, coefficient_amount):
             index = div % coefficient_value_amount
@@ -34,23 +63,7 @@ def get_data(coefficient_value_amount, input_length, input_width, test_repetitio
         print("solved equation " + str(counter))
         training_input.extend(input)
         training_output.extend(output)
-
-    random.seed(22)
-    test_coeff = numpy.zeros((test_data_amount, coefficient_amount))
-    for i in range(0, test_data_amount):
-        for j in range(0, coefficient_amount):
-            coeff[j] = random.uniform(coef_min_value, coef_max_value)
-        test_coeff[i, :] = coeff
-        solution = solve_pde(coeff, grid, input_length, interval_amount, test_repetitions-1)
-        input = (solution[0:input_length, :])
-        output = (solution[input_length:, :])
-        counter = counter + 1
-        print("solved equation " + str(counter))
-        testing_input.append(input)
-        testing_output.append(output)
-
-    return numpy.vstack(training_input), numpy.array(training_output), \
-           numpy.stack(testing_input), numpy.stack(testing_output)
+    return coeff, counter
 
 
 def solve_pde(coeff, grid, input_length, interval_amount, elongation=0):

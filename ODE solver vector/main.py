@@ -1,23 +1,23 @@
-import math
+import os
 
 import numpy.linalg
 from tensorflow import keras
 
 import data
-from data import get_data
+import save_data
 import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 
 input_length = 3
 test_data_amount = 100
 test_repetitions = 10000
+coeff_value_amount = 7
 
 def plot_3d(testing_input, testing_output, results):
     for i in range(0, len(testing_output)):
         ax = plt.figure().add_subplot(projection='3d')
         output_plot = []
         results_plot = []
-        for j in range(0,3):
+        for j in range(0, 3):
             input_val = testing_input[i, j:3*input_length+j:3]
             output_plot.append(numpy.append(input_val, testing_output[i, j, :]))
             results_plot.append(numpy.append(input_val, results[i, j, :]))
@@ -26,14 +26,25 @@ def plot_3d(testing_input, testing_output, results):
         ax.plot(results_plot[0], results_plot[1], results_plot[2])
         ax.legend(["exact solution", "approximate solution"])
         plt.title("Plot number " + str(i))
+    plt.show()
 
 
-if __name__ == '__main__':
-    training_input, training_output, testing_input, testing_output, t_eval, test_coeff = \
-        get_data(coefficient_value_amount=7, input_length=input_length, test_repetitions=test_repetitions,
-                 test_data_amount=test_data_amount)
+def load_data():
+    file_path = 'data_sets/data_set_lwdri_%d_%d_%d_%d.npy' % (
+        coeff_value_amount, input_length, test_repetitions, test_data_amount)
+    if not os.path.exists(file_path):
+        save_data.generate_data(coeff_value_amount, input_length, test_data_amount, test_repetitions, file_path)
+    with open(file_path, 'rb') as f:
+        training_input = numpy.load(f)
+        training_output = numpy.load(f)
+        testing_input = numpy.load(f)
+        testing_output = numpy.load(f)
+        t_eval = numpy.load(f)
+        test_coeff = numpy.load(f)
+    return training_input, training_output, testing_input, testing_output, t_eval, test_coeff
 
-    dim = data.dimensions
+
+def build_model(dim, training_input, training_output):
     model = keras.Sequential(
         [
             keras.layers.Dense(16, activation="relu", name="layer1"),
@@ -41,37 +52,44 @@ if __name__ == '__main__':
             keras.layers.Dense(dim, name="layer3"),
         ]
     )
-
     model.compile(loss=keras.losses.MeanSquaredError(),
                   optimizer=keras.optimizers.Adam(),
                   metrics=[keras.metrics.MeanAbsoluteError()])
-
     model.fit(training_input, training_output, batch_size=32, epochs=20)
+    return model
+
+
+def test_model(model, dim, testing_input, testing_output, test_coeff):
     results = numpy.zeros((len(testing_output), dim, test_repetitions))
     new_values = numpy.zeros((len(testing_output), dim))
     new_diff = numpy.zeros((len(testing_output), dim))
     testing_input_modified = numpy.array(testing_input, copy=True)
-    for i in range(0, test_repetitions-1):
+    for i in range(0, test_repetitions - 1):
         results[:, :, i] = (model(testing_input_modified).numpy())
-        testing_input_values = testing_input_modified[:, dim:input_length*dim]
-        testing_input_diff = testing_input_modified[:, (input_length+1)*dim:]
+        testing_input_values = testing_input_modified[:, dim:input_length * dim]
+        testing_input_diff = testing_input_modified[:, (input_length + 1) * dim:]
         new_values[:, :] = results[:, :, i]
         for j in range(0, len(new_values)):
             F = data.function(test_coeff[j])
             new_diff[j, :] = F(t_eval[input_length - 1 + i], new_values[j, :])
         testing_input_modified = numpy.concatenate((testing_input_values, new_values, testing_input_diff, new_diff),
                                                    axis=1)
-    results[:, :, test_repetitions-1] = (model(testing_input_modified).numpy())
+    results[:, :, test_repetitions - 1] = (model(testing_input_modified).numpy())
+    return results
+
+
+def print_error(results, testing_output):
     total_error = results[:, :, -1] - testing_output[:, :, -1]
     error_norm = numpy.linalg.norm(total_error, 2)
     error = error_norm / len(testing_output)
     print('the approximation error is %f' % error)
 
-    plot_3d(testing_input, testing_output, results)
 
-    """f = lambda t, x: math.exp(x/10)/10
-    test_function(f, model, 1, "exp(x/10)")
-
-    g = lambda t, x: math.sqrt(abs(x))/5
-    test_function(g, model, 1, "sqrt(abs(x))") """
-    plt.show()
+if __name__ == '__main__':
+    dim = data.dimensions
+    training_input, training_output, testing_input, testing_output, t_eval, test_coeff = load_data()
+    model = build_model(dim, training_input, training_output)
+    results = test_model(model, dim, testing_input, testing_output, test_coeff)
+    print_error(results, testing_output)
+    if dim == 3:
+        plot_3d(testing_input, testing_output, results)
