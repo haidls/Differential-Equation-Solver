@@ -10,30 +10,48 @@ coef_min_value = -1
 coefficient_amount = 3
 dt = 1e-4
 
-def get_data(coefficient_value_amount, input_length, input_width, test_repetitions=1, test_data_amount=50,
-             interval_amount = 10):
-    training_input = []
-    training_output = []
-    testing_input = []
-    testing_output = []
 
+def get_data(coefficient_value_amount, input_length, input_width, test_repetitions=1, test_data_amount=50,
+             interval_amount=10):
+    """
+    Generates and returns data for the model.
+    :param coefficient_value_amount: the amount of different values per coefficient
+    :param input_length: the amount of time steps the input consists of
+    :param input_width: the amount of spacial steps the input consists of
+    :param test_repetitions: the amount of output time steps
+    :param test_data_amount: the amount of testing data
+    :param interval_amount: the amount of spacial intervals the numerical approximation uses
+    :return: the data necessary for building a model
+    """
     coefficient_range = numpy.linspace(coef_min_value, coef_max_value, coefficient_value_amount)
     grid = pde.CartesianGrid([[0, 1]], [interval_amount*3//2])
 
-    coeff, counter = create_training_data(coefficient_range, coefficient_value_amount, grid, input_length, input_width,
-                                          interval_amount, training_input, training_output)
+    training_input, training_output = create_training_data(coefficient_range, coefficient_value_amount, grid,
+                                                           input_length, input_width, interval_amount)
 
-    create_testing_data(coeff, counter, grid, input_length, interval_amount, test_data_amount, test_repetitions,
-                        testing_input, testing_output)
+    testing_input, testing_output = create_testing_data(grid, input_length, interval_amount, test_data_amount,
+                                                        test_repetitions)
 
     return numpy.vstack(training_input), numpy.array(training_output), numpy.stack(testing_input), \
            numpy.stack(testing_output)
 
 
-def create_testing_data(coeff, counter, grid, input_length, interval_amount, test_data_amount, test_repetitions,
-                        testing_input, testing_output):
+def create_testing_data(grid, input_length, interval_amount, test_data_amount, test_repetitions):
+    """
+    Creates data for testing the model
+    :param grid: grid used for the numerical solving of the PDE
+    :param input_length: the amount of time steps the input consists of
+    :param interval_amount: the amount of spacial intervals the numerical approximation uses
+    :param test_data_amount: the amount of testing data
+    :param test_repetitions: the amount of output time steps
+    :return: data for testing a model
+    """
+    testing_input = []
+    testing_output = []
     random.seed(22)
+    coeff = numpy.zeros(coefficient_amount)
     test_coeff = numpy.zeros((test_data_amount, coefficient_amount))
+    counter = 0
     for i in range(0, test_data_amount):
         for j in range(0, coefficient_amount):
             coeff[j] = random.uniform(coef_min_value, coef_max_value)
@@ -45,10 +63,22 @@ def create_testing_data(coeff, counter, grid, input_length, interval_amount, tes
         print("solved equation " + str(counter))
         testing_input.append(input)
         testing_output.append(output)
+    return testing_input, testing_output
 
 
-def create_training_data(coefficient_range, coefficient_value_amount, grid, input_length, input_width, interval_amount,
-                         training_input, training_output):
+def create_training_data(coefficient_range, coefficient_value_amount, grid, input_length, input_width, interval_amount):
+    """
+    Creates data for training the model
+    :param coefficient_range: possible coefficient values
+    :param coefficient_value_amount: the amount of different values per coefficient
+    :param grid: grid used for the numerical solving of the PDE
+    :param input_length: the amount of time steps the input consists of
+    :param input_width: the amount of spacial steps the input consists of
+    :param interval_amount: the amount of spacial intervals the numerical approximation uses
+    :return: data for creating a model
+    """
+    training_input = []
+    training_output = []
     coeff = numpy.zeros(coefficient_amount)
     counter = 0
     for i in range(0, coefficient_value_amount ** coefficient_amount):
@@ -63,10 +93,19 @@ def create_training_data(coefficient_range, coefficient_value_amount, grid, inpu
         print("solved equation " + str(counter))
         training_input.extend(input)
         training_output.extend(output)
-    return coeff, counter
+    return training_input, training_output
 
 
 def solve_pde(coeff, grid, input_length, interval_amount, elongation=0):
+    """
+    Solves a PDE numerically.
+    :param coeff: coefficients of the right hand side
+    :param grid: grid used for the numerical solving of the PDE
+    :param input_length: the amount of time steps the input consists of
+    :param interval_amount: the amount of spacial intervals the numerical approximation uses
+    :param elongation: the amount of time steps used aside from the input
+    :return: numerical solution of the PDE
+    """
     F = function(coeff)
     expression = function_string(coeff)
     field = pde.ScalarField.from_expression(grid, expression)
@@ -81,14 +120,32 @@ def solve_pde(coeff, grid, input_length, interval_amount, elongation=0):
 
 
 def function(coeff):
+    """
+    initial vaule function
+    :param coeff: coefficients for the function
+    :return: initial value at a point
+    """
     return lambda t, s: coeff[0] * math.sin(2 * math.pi * s) + coeff[1] * s + coeff[2] * math.cos(2 * math.pi * s)
 
 
 def function_string(coeff):
+    """
+    generates a string representation of the function.
+    :param coeff: coefficients of the right hand side
+    :return: string representation
+    """
     return str(coeff[0]) + "*sin(2*pi*x)+" + str(coeff[1]) + "*x+" + str(coeff[2]) + "*cos(2*pi*x)"
 
 
 def pick_out_values(data, F, length, interval_amount):
+    """
+    Chooses values from the numerical approximation which will be used for training the model. Sets boundary conditions.
+    :param data: numerical solution of the PDE
+    :param F: initial value
+    :param length: total amount of time steps
+    :param interval_amount: the amount of spacial intervals the numerical approximation uses
+    :return: the PDE's solution reduced to the relevant values
+    """
     solution = numpy.zeros((length, interval_amount+1))
     solution[:, 0] = numpy.ones(length) * F(0, 0)
     index = 1
@@ -102,10 +159,16 @@ def pick_out_values(data, F, length, interval_amount):
 
 
 def format_input(input_length, input_width, solution):
+    """
+    Extracts input and output data for training a model from the numerical solution .
+    :param input_length: the amount of time steps the input consists of
+    :param input_width: the amount of spacial steps the input consists of
+    :param solution: numerical solution of the PDE
+    :return: input and output data
+    """
     input = []
     output = []
     for i in range(input_width, solution.shape[1] - input_width):
         input.append((solution[-1-input_length:-1, i-input_width:i+input_width+1]).flatten())
         output.append(solution[-1, i])
-
     return input, output

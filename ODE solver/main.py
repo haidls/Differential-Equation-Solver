@@ -1,3 +1,10 @@
+"""
+A program that trains neural networks to solve one dimensional ordinary differential equations of order one with any
+right hand side.
+author: Linus Haid
+version: 22.06.2023
+"""
+
 import math
 import os
 
@@ -86,19 +93,18 @@ def build_model(training_input, training_output):
     return model
 
 
-def test_model(model, testing_input, testing_output, test_coeff, t_eval):
+def test_model(model, testing_input, test_coeff, t_eval):
     """
-    Uses the model to approximate the solutions od ODEs.
+    Uses the model to approximate the solutions of ODEs.
     :param model: model fitted to the data
     :param testing_input: input data for the model
-    :param testing_output: expected output data of the model
     :param test_coeff: coefficients of the right hand sides of the ODEs
     :param t_eval: evaluation points
     :return: approximation of the ODEs solution
     """
-    results = numpy.zeros((len(testing_output), test_repetitions))
-    new_values = numpy.zeros((len(testing_output), 1))
-    new_diff = numpy.zeros((len(testing_output), 1))
+    results = numpy.zeros((len(testing_input), test_repetitions))
+    new_values = numpy.zeros((len(testing_input), 1))
+    new_diff = numpy.zeros((len(testing_input), 1))
     testing_input_modified = numpy.array(testing_input, copy=True)
     for i in range(0, test_repetitions - 1):
         results[:, i] = (model(testing_input_modified).numpy())[:, 0]
@@ -163,7 +169,7 @@ def additional_tests(model, t_eval):
 if __name__ == '__main__':
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = load_data()
     model = build_model(training_input, training_output)
-    results = test_model(model, testing_input, testing_output, test_coeff, t_eval)
+    results = test_model(model, testing_input, test_coeff, t_eval)
     print_error(results, testing_output)
     plot_results(testing_input, testing_output, t_eval, results)
     additional_tests(model, t_eval)

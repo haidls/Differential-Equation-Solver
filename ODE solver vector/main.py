@@ -1,4 +1,12 @@
+"""
+A program that trains neural networks to solve multi dimensional ordinary differential equations of order one with a
+specified right hand side (currently the lorenz attractor).
+author: Linus Haid
+version: 22.06.2023
+"""
+
 import os
+import time
 
 import numpy.linalg
 from tensorflow import keras
@@ -12,9 +20,17 @@ test_data_amount = 100
 test_repetitions = 10000
 coeff_value_amount = 7
 
+
 def plot_3d(testing_input, testing_output, results):
+    """
+    Plots the results of the test for 3D ODEs.
+    :param testing_input: input data for the model
+    :param testing_output: expected output data of the model
+    :param results: actual output data of the model
+    """
     for i in range(0, len(testing_output)):
-        ax = plt.figure().add_subplot(projection='3d')
+        figure = plt.figure()
+        ax = figure.add_subplot(projection='3d')
         output_plot = []
         results_plot = []
         for j in range(0, 3):
@@ -26,10 +42,16 @@ def plot_3d(testing_input, testing_output, results):
         ax.plot(results_plot[0], results_plot[1], results_plot[2])
         ax.legend(["exact solution", "approximate solution"])
         plt.title("Plot number " + str(i))
-    plt.show()
+        plt.show()
+        plt.close(figure)
+        time.sleep(2)
 
 
 def load_data():
+    """
+    Loads the data if it already exists, generates new data otherwise
+    :return: the data necessary for building a model
+    """
     file_path = 'data_sets/data_set_lwdri_%d_%d_%d_%d.npy' % (
         coeff_value_amount, input_length, test_repetitions, test_data_amount)
     if not os.path.exists(file_path):
@@ -45,6 +67,13 @@ def load_data():
 
 
 def build_model(dim, training_input, training_output):
+    """
+    Creates a model and fits it to the data
+    :param dim: dimension of the ODE
+    :param training_input: input data for the model
+    :param training_output: expected output data of the model
+    :return: a model fitted to the data
+    """
     model = keras.Sequential(
         [
             keras.layers.Dense(16, activation="relu", name="layer1"),
@@ -59,10 +88,18 @@ def build_model(dim, training_input, training_output):
     return model
 
 
-def test_model(model, dim, testing_input, testing_output, test_coeff):
-    results = numpy.zeros((len(testing_output), dim, test_repetitions))
-    new_values = numpy.zeros((len(testing_output), dim))
-    new_diff = numpy.zeros((len(testing_output), dim))
+def test_model(model, dim, testing_input, test_coeff):
+    """
+    Uses the model to approximate the solutions of ODEs.
+    :param model: model fitted to the data
+    :param dim: dimension of the ODE
+    :param testing_input: input data for the model
+    :param test_coeff: coefficients of the right hand sides of the ODEs
+    :return: approximation of the ODEs solution
+    """
+    results = numpy.zeros((len(testing_input), dim, test_repetitions))
+    new_values = numpy.zeros((len(testing_input), dim))
+    new_diff = numpy.zeros((len(testing_input), dim))
     testing_input_modified = numpy.array(testing_input, copy=True)
     for i in range(0, test_repetitions - 1):
         results[:, :, i] = (model(testing_input_modified).numpy())
@@ -79,6 +116,11 @@ def test_model(model, dim, testing_input, testing_output, test_coeff):
 
 
 def print_error(results, testing_output):
+    """
+    Calculates and plots the error of the model.
+    :param results: actual output data of the model
+    :param testing_output: expected output data of the model
+    """
     total_error = results[:, :, -1] - testing_output[:, :, -1]
     error_norm = numpy.linalg.norm(total_error, 2)
     error = error_norm / len(testing_output)
@@ -89,7 +131,7 @@ if __name__ == '__main__':
     dim = data.dimensions
     training_input, training_output, testing_input, testing_output, t_eval, test_coeff = load_data()
     model = build_model(dim, training_input, training_output)
-    results = test_model(model, dim, testing_input, testing_output, test_coeff)
+    results = test_model(model, dim, testing_input, test_coeff)
     print_error(results, testing_output)
     if dim == 3:
         plot_3d(testing_input, testing_output, results)
