@@ -98,7 +98,7 @@ def create_training_data(coefficient_range, coefficient_value_amount, input_leng
     training_output = []
     failed_counter_training = 0
     coeff = numpy.zeros(coefficient_amount)
-    for i in range(0, coefficient_amount ** coefficient_value_amount):
+    for i in range(0, coefficient_value_amount ** coefficient_amount):
         div = i
         for j in range(0, coefficient_amount):
             index = div % coefficient_value_amount

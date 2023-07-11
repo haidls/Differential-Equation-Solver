@@ -16,10 +16,10 @@ import save_data
 
 input_length = 3
 input_width = 1
-test_data_amount = 30
+test_data_amount = 100
 test_repetitions = 5
 interval_amount = 100
-coefficient_value_amount = 7
+coefficient_value_amount = 8
 
 
 def load_data():
@@ -49,8 +49,8 @@ def build_model(training_input, training_output):
     """
     model = keras.Sequential(
         [
-            keras.layers.Dense(16, activation="relu", name="layer1"),
-            keras.layers.Dense(10, activation="relu", name="layer2"),
+            keras.layers.Dense(12, activation="relu", name="layer1"),
+            keras.layers.Dense(8, activation="relu", name="layer2"),
             keras.layers.Dense(1, name="layer3"),
         ]
     )

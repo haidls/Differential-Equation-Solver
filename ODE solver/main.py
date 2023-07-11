@@ -59,7 +59,7 @@ def load_data():
     :return: the data necessary for building a model
     """
     file_path = 'data_sets/data_set_lwdri_%d_%d_%d_%d.npy' % (
-    coeff_value_amount, input_length, test_repetitions, test_data_amount)
+        coeff_value_amount, input_length, test_repetitions, test_data_amount)
     if not os.path.exists(file_path):
         save_data.generate_data(coeff_value_amount, input_length, test_data_amount, test_repetitions, file_path)
     with open(file_path, 'rb') as f:

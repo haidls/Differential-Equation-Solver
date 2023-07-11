@@ -31,10 +31,10 @@ def get_data(coefficient_value_amount, input_length, test_repetitions=1, test_da
     """
     coefficient_range, start_range, t_eval_test, t_eval_training = data_setup(coefficient_value_amount, input_length,
                                                                               test_repetitions)
-    coeff, training_input, training_output = create_training_data(coefficient_range, coefficient_value_amount,
+    training_input, training_output = create_training_data(coefficient_range, coefficient_value_amount,
                                                                   input_length, start_range, t_eval_training)
 
-    test_coeff, testing_input, testing_output = create_testing_data(coeff, input_length, t_eval_test, test_data_amount,
+    test_coeff, testing_input, testing_output = create_testing_data(input_length, t_eval_test, test_data_amount,
                                                                     test_repetitions)
 
     return numpy.stack(training_input, axis=0), numpy.array(training_output), \
@@ -102,7 +102,7 @@ def create_training_data(coefficient_range, coefficient_value_amount, input_leng
     training_output = []
     failed_counter_training = 0
     coeff = numpy.zeros(coefficient_amount)
-    for i in range(0, coefficient_amount ** coefficient_value_amount):
+    for i in range(0, coefficient_value_amount ** coefficient_amount):
         div = i
         for j in range(0, dimensions):
             index = div % coefficient_value_amount
@@ -122,7 +122,7 @@ def create_training_data(coefficient_range, coefficient_value_amount, input_leng
         else:
             failed_counter_training += 1
     print('The training data generation failed %d times' % failed_counter_training)
-    return coeff, training_input, training_output
+    return training_input, training_output
 
 
 def function(coeff):

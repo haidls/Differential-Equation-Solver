@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 input_length = 3
 test_data_amount = 100
-test_repetitions = 10000
+test_repetitions = 28
 coeff_value_amount = 7
 
 
